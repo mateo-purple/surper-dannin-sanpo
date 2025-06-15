@@ -1,18 +1,16 @@
 <?php
 $counterFile = "counter.txt";
-$file = 'game.zip'; // ← ここも game.zip に変更
+$file = 'game.zip';
 
 if (!file_exists($file)) {
     http_response_code(404);
-    echo "ファイルが見つかりません。";
-    exit;
+    exit("ファイルが見つかりません。");
 }
 
-// カウンター処理（排他ロック付き）
+// カウンター処理
 $fp = fopen($counterFile, "c+");
-if (flock($fp, LOCK_EX)) {
-    $size = filesize($counterFile);
-    $count = $size > 0 ? (int)fread($fp, $size) : 0;
+if ($fp && flock($fp, LOCK_EX)) {
+    $count = (int)fread($fp, filesize($counterFile));
     $count++;
     ftruncate($fp, 0);
     rewind($fp);
@@ -22,10 +20,12 @@ if (flock($fp, LOCK_EX)) {
 }
 fclose($fp);
 
-// ダウンロードヘッダー
+// ヘッダー送信
 header('Content-Type: application/zip');
 header('Content-Disposition: attachment; filename="game.zip"');
 header('Content-Length: ' . filesize($file));
+
+ob_clean();
+flush();
 readfile($file);
 exit;
-?>
